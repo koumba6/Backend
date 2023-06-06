@@ -1,6 +1,7 @@
 //importation package
 const express = require('express');
 const Model = require('../models/user');
+const admin = require('../models/admin');
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const check = require("../middleware/middleware");
@@ -15,12 +16,12 @@ module.exports = router;
 // La connexion par formulaire
 router.post("/login", async (req, res, next) => { // Async pour dire que la connexion ne dépend d'aucun processus 
     // On Récupère l'email et le mot de passe contenus dans la requete
-    let { prenom, nom , email, password } = req.body;
+    let { email, password } = req.body;
 
     let existingUser;
 
     // Retrouve l'email saisi dans la base de données et stocke ça dans existingUser
-    existingUser = await Model.findOne({ email: email });
+    existingUser = await admin.findOne({ email: email });
     if (!existingUser) { // si l'email ne s'y trouve pas donne le message
         return res.status(404).send("email doesn't exist...!");
     }
@@ -52,15 +53,14 @@ router.post("/login", async (req, res, next) => { // Async pour dire que la conn
     return res
         .status(200)
         .json({
-            success: true,
-            data: {
+            
                 userId: existingUser.id,
                 prenom: existingUser.prenom,
                 nom: existingUser.nom,
                 email: existingUser.email,
                 password: existingUser.password,
                 token: token,
-            },
+           
         });
 });
 
@@ -69,7 +69,7 @@ router.post('/post', async (req, res) => {
     //Recupération des donneés en basant basant sur le model 
     const { prenom,nom,email, password } = req.body;
     const users = [];
-    const newUser = Model({ 
+    const newUser = admin({ 
         prenom,
         nom,
         email,
@@ -79,7 +79,7 @@ router.post('/post', async (req, res) => {
     });
     //
     try {
-        const oldUser = await Model.findOne({ email });
+        const oldUser = await admin.findOne({ email });
         
         if (oldUser) {
             return res.status(401).send("Email Already Exist. Please Login");
@@ -94,8 +94,42 @@ router.post('/post', async (req, res) => {
     }
 });
 
+//Methode poste pour envoyer dans la base de données
+router.post('/user', async (req, res) => {
+    //Recupération des donneés en basant basant sur le model 
+    const { prenom,nom, code, abonnementType,type,solde } = req.body;
+    const users = []
+    console.log(req.body);
+    
+    const newUser = Model({ 
+        prenom,
+        nom,
+        abonnementType,
+        code,
+        type,
+        solde
+
+       
+    });
+    //
+    try {
+        // const oldUser = await Model.findOne({ email });
+        
+        // if (oldUser) {
+        //     return res.status(401).send("Email Already Exist. Please Login");
+        // }
+        // const hash = await bcrypt.hash(newUser.password, 10);
+        // newUser.password = hash;
+        // users.push(newUser);
+        await newUser.save();
+        res.status(201).json(newUser);
+    } catch (error) {
+        res.status(404).json({ message: error.message })
+    }
+});
+
 //Methode de recuperation de tous les utilisateurs
-router.get('/getAll',check, async (req, res) => {
+router.get('/getAll', async (req, res) => {
     try {
         const data = await Model.find();
         res.json(data)
@@ -166,18 +200,15 @@ router.delete('/delete/:id', check, async (req, res) => {
 //abonnements
 router.post('/abonnement', async (req, res) => {
     //Recupération des donneés en basant basant sur le model 
-    const { prenom,nom,codeacces, Type,prix,description,montant,solde } = req.body;
+    const { type,prix,description } = req.body;
      
     const abonnement = Abonnement({
 
-        prenom,
-        nom,
-        codeacces,
-        Type,
+       
+        type,
         prix,
         description,
-        montant,
-        solde
+       
 
        
     });
@@ -200,7 +231,7 @@ router.post('/abonnement', async (req, res) => {
 //Methode de recuperation de tous les utilisateurs
 router.get('/abonnement/getAll', async (req, res) => {
     try {
-        const data = await abonnement.find();
+        const data = await Abonnement.find();
         res.json(data)
     }
     catch (error) {
@@ -210,7 +241,7 @@ router.get('/abonnement/getAll', async (req, res) => {
 //Methode de recuperation d'un seul utilisateur
 router.get('/abonnement/getOne/:id', async (req, res) => {
     try {
-        const data = await abonnement.findById(req.params.id);
+        const data = await Abonnement.findById(req.params.id);
         return res.json(data)
     }
     catch (error) {
@@ -222,7 +253,7 @@ router.delete('/abonnement/delete/:id', check, async (req, res) => {
     try {
 
         const id = req.params.id;
-        const data = await abonnement.findByIdAndDelete(id)
+        const data = await Abonnement.findByIdAndDelete(id)
         /* res.send(`Le Document  a été supprimé..`) */
 
         return res.json({ message: 'objet supprimé.',data: data});

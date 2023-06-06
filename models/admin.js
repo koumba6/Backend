@@ -1,22 +1,24 @@
 const mongoose = require('mongoose');
 
-const dataSchema = new mongoose.Schema({
-    
-    
-    type: {
+const adminSchema = new mongoose.Schema({
+   
+    prenom: {
         required: false,
         type: String
     },
-    prix: {
+    nom: {
         required: false,
         type: String
     },
-    description: {
+    email: {
         required: false,
         type: String
     },
-    
+    password:{
+        required: false,
+        type: String
+    },
     
 })
 
-module.exports = mongoose.model('abonnement', dataSchema);
+module.exports = mongoose.model('amdin', adminSchema);
